@@ -1,9 +1,5 @@
 import streamlit as st
-<<<<<<< HEAD
-import snowflake.connector
-=======
 from sqlalchemy import create_engine
->>>>>>> clean_main
 import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
@@ -13,8 +9,6 @@ import re
 load_dotenv()
 
 # Functions
-<<<<<<< HEAD
-=======
 def highlight_lean_row(row):
     val = row['Lean']
     
@@ -34,8 +28,6 @@ def highlight_lean_row(row):
     
     return styles
 
-
->>>>>>> clean_main
 def letterboxd_slug(title):
     title = title.lower()
     title = re.sub(r'[^a-z0-9\s]', '', title)
@@ -59,59 +51,6 @@ def diff_color(diff):
     if diff > 0.3: return "green"
     elif diff < -0.3: return "red"
     else: return "gray"
-<<<<<<< HEAD
-
-# Snowflake connection parameters
-ACCOUNT = os.getenv('SNOWFLAKE_ACCOUNT')
-USER = os.getenv('SNOWFLAKE_USER')
-PASSWORD = os.getenv('SNOWFLAKE_PASSWORD')
-WAREHOUSE = 'COMPUTE_WH'
-DATABASE = 'P_MOVIE_DB'
-SCHEMA = 'BRONZE'
-
-if 'initialized' not in st.session_state:
-    st.session_state.conn = None
-    st.session_state.df = None
-    
-
-if st.session_state.conn is None:
-    # Connect to Snowflake
-    print("Connecting to Snowflake...")
-    st.session_state.conn = snowflake.connector.connect(
-        account=ACCOUNT,
-        user=USER,
-        password=PASSWORD,
-        warehouse=WAREHOUSE,
-        database=DATABASE,
-        schema=SCHEMA
-    )
-    
-conn = st.session_state.conn
-
-# Pull data
-if st.session_state.df is None:
-    st.session_state.df = pd.read_sql("""
-        SELECT * FROM P_MOVIE_DB.DBT_GOLD.JOINED_MOVIE_RATINGS
-    """, conn)
-
-df = st.session_state.df
-    
-
-st.set_page_config(page_title="PMDb", page_icon="🎞️", layout="wide")
-st.title("🎞️ PMDb")
-st.markdown("Comparing **IMDb** and **Letterboxd** ratings across 37,000+ films — where they agree, and where they don't.")
-st.divider()
-
-
-
-graph_tab, rank_tab, film_tab = st.tabs(["Graphs", "Rankings", "Film Details"])
-
-with graph_tab:
-        
-    min_votes = st.slider("Minimum Votes", 1000, 500000, 10000)
-
-    filtered = df[df['NUM_VOTES'] > min_votes]
-=======
     
 # Get secrets
 ACCOUNT = os.getenv('SNOWFLAKE_ACCOUNT')
@@ -167,7 +106,6 @@ with graph_tab:
         filtered = filtered[filtered['COMPOSITE_RATING'] >= rating_map[min_rating]]
     if decade_graph != "Any":
         filtered = filtered[(filtered['RELEASE_YEAR'] >= decade_graph) & (filtered['RELEASE_YEAR'] < decade_graph + 10)]
->>>>>>> clean_main
 
     fig = px.scatter(
         filtered,
@@ -197,23 +135,7 @@ with graph_tab:
 
     st.plotly_chart(fig, use_container_width=True)
     
-    
-<<<<<<< HEAD
-    
-    st.divider()
-    st.subheader("Biggest Disagreements")
 
-    top_n = st.slider("Number of Films", 10, 50, 20, key="diverge_n")
-    min_votes_div = st.slider("Minimum Votes", 1000, 500000, 50000, key="diverge_votes")
-
-    div_df = df[df['NUM_VOTES'] > min_votes_div].copy()
-    div_df = div_df.nlargest(top_n, 'ABS_RATING_DIFF')
-    div_df = div_df.sort_values('RAW_RATING_DIFF')
-
-    div_df['COLOR'] = div_df['RAW_RATING_DIFF'].apply(
-        lambda x: 'Letterboxd Favors' if x > 0 else 'IMDb Favors'
-    )
-=======
     st.divider()
     st.subheader("Most Significant Differences")
 
@@ -243,36 +165,23 @@ with graph_tab:
     div_df['FAVOR'] = div_df['RAW_RATING_DIFF'].apply(
     lambda x: 'Letterboxd Favors' if x > 0 else 'IMDb Favors'
 )
->>>>>>> clean_main
 
     fig2 = px.bar(
         div_df,
         x='RAW_RATING_DIFF',
         y='TITLE',
         orientation='h',
-<<<<<<< HEAD
-        color='COLOR',
-=======
         color='FAVOR',
->>>>>>> clean_main
         color_discrete_map={
             'Letterboxd Favors': '#44a299',
             'IMDb Favors': '#debf7a'
         },
-<<<<<<< HEAD
-        title='Biggest Rating Disagreements',
-        labels={
-            'RAW_RATING_DIFF': 'Rating Difference',
-            'TITLE': '',
-            'COLOR': ''
-=======
         title='Platform Rating Divergence (top 5 each)',
         labels={
             'RAW_RATING_DIFF': 'Rating Difference',
             'TITLE': '',
             'FAVOR': 'Lean'
             
->>>>>>> clean_main
         },
         hover_data=['IMDB_RATING', 'LB_RATING', 'NUM_VOTES']
     )
@@ -291,10 +200,7 @@ with graph_tab:
 
 
 with rank_tab:
-<<<<<<< HEAD
-=======
     st.subheader("Leaderboards")
->>>>>>> clean_main
     
     rc1, rc2, rc3 = st.columns(3)
     
@@ -308,20 +214,12 @@ with rank_tab:
         ])
     
     with rc2:
-<<<<<<< HEAD
-        decade_options = ["All"] + sorted(list(set((df['RELEASE_YEAR'] // 10 * 10).dropna().astype(int).tolist())))
-        decade = st.selectbox("Decade", decade_options)
-    
-    with rc3:
-        min_votes_rank = st.slider("Minimum Votes", 1000, 500000, 10000, key="rank_votes")
-=======
         decade_options = ["All"] + sorted(list(set((df['RELEASE_YEAR'] // 10 * 10).dropna().astype(int).tolist())), reverse=True)
 
         decade = st.selectbox("Decade", decade_options)
     
     with rc3:
         min_votes_rank = st.slider("Minimum Votes", 1000, 500000, 50000, key="rank_votes")
->>>>>>> clean_main
 
     sort_col_map = {
         "Combined Rating": "COMPOSITE_RATING",
@@ -349,11 +247,6 @@ with rank_tab:
         "Lean": rank_df['RAW_RATING_DIFF'].round(2),
         "Votes": rank_df['NUM_VOTES']
     })
-<<<<<<< HEAD
-
-    st.dataframe(
-        display_df,
-=======
     
     styled_df = (
         display_df.style
@@ -369,7 +262,6 @@ with rank_tab:
 
     st.dataframe(
         styled_df,
->>>>>>> clean_main
         hide_index=True,
         use_container_width=True,
         column_config={
@@ -403,11 +295,8 @@ with film_tab:
             imdb_percentile = max(1, round((df['IMDB_RATING'] < selected_film.IMDB_RATING).mean() * 100))
             lb_percentile = max(1, round((df['LB_RATING'] < selected_film.LB_RATING).mean() * 100))
 
-<<<<<<< HEAD
-=======
             st.write("")
             
->>>>>>> clean_main
             m1, m2, m3 = st.columns(3)
             m1.metric("Combined", round(selected_film.COMPOSITE_RATING, 2),
                 delta=percentile_label(composite_percentile),
@@ -423,11 +312,7 @@ with film_tab:
                 delta_arrow="off")
 
 
-<<<<<<< HEAD
-            st.divider()
-=======
             # st.divider()
->>>>>>> clean_main
 
             diff = round(selected_film.RAW_RATING_DIFF, 2)
             abs_diff = abs(diff)
@@ -445,10 +330,5 @@ with film_tab:
                 st.warning(f"IMDb favors this film by **{abs_diff}** points")
 
 
-<<<<<<< HEAD
-            
-        
-=======
 st.divider()
 st.caption("*Click [here](https://peytonjpope.com/projects/pmdb/) for more info*")
->>>>>>> clean_main
