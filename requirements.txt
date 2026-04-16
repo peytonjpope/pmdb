@@ -1,5 +1,6 @@
 streamlit
 pandas
 plotly
-snowflake-connector-python==3.12.0
+snowflake-sqlalchemy
+sqlalchemy
 python-dotenv
