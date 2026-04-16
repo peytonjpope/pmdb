@@ -1,26 +1,9 @@
-<<<<<<< HEAD
-Welcome to your new dbt project!
 
-### Using the starter project
-
-Try running the following commands:
-- dbt run
-- dbt test
-
-
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](https://community.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
-=======
-
-# PMDb dbt Project
+# PMDb dbt
 
 Transforms raw movie data from Bronze → Silver → Gold using dbt Core and Snowflake.
 
-## Architecture
+## Pipeline
 
 ```
 Bronze (raw)                    Silver (clean)            Gold (analytics)
@@ -62,10 +45,3 @@ dbt run --select silver
 # Run only Gold layer
 dbt run --select gold
 ```
-
-## Requirements
-
-* `dbt-snowflake` 1.11+
-* Snowflake account with `P_MOVIE_DB` database
-* Bronze tables loaded via `loading_script.py`
->>>>>>> clean_main
