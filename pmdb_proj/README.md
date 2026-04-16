@@ -1,15 +1,53 @@
-Welcome to your new dbt project!
 
-### Using the starter project
+# PMDb dbt Project
 
-Try running the following commands:
-- dbt run
-- dbt test
+Transforms raw movie data from Bronze → Silver → Gold using dbt Core and Snowflake.
 
+## Architecture
 
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](https://community.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+```
+Bronze (raw)                    Silver (clean)            Gold (analytics)
+─────────────                   ──────────────────        ─────────────────
+LETTERBOXD_BASIC_IMPORT   ──┐
+LETTERBOXD_POSTERS_IMPORT ──┴──→  letterboxed_clean  ──┐
+IMDB_BASIC_IMPORT         ──┐                          │
+IMDB_RATING_IMPORT        ──┴──→  imdb_clean           ├──→  joined_movie_ratings
+                                                    
+```
+
+## Models
+
+### Silver
+
+| Model               | Source             | Description                           |
+| ------------------- | ------------------ | ------------------------------------- |
+| `letterboxed_clean` | LETTERBOXD_IMPORT + LETTERBOXD_POSTERS_IMPORT | Filters nulls, casts date and runtime |
+| `imdb_clean`  | IMDB_BASIC_IMPORT + IMDB_RATING_IMPORT | Filters to movies only, casts year    |
+
+### Gold
+
+| Model           | Description                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `movies_joined` | Joins both silver tables on title + year, adds composite rating and rating diff columns |
+
+## Usage
+
+```bash
+# Build all models
+dbt run
+
+# Run data quality tests
+dbt test
+
+# Run only Silver layer
+dbt run --select silver
+
+# Run only Gold layer
+dbt run --select gold
+```
+
+## Requirements
+
+* `dbt-snowflake` 1.11+
+* Snowflake account with `P_MOVIE_DB` database
+* Bronze tables loaded via `loading_script.py`
