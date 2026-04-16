@@ -9,6 +9,18 @@ import re
 load_dotenv()
 
 # Functions
+def min_to_hr(minutes):
+    hr = minutes // 60
+    min = minutes % 60
+    if hr > 0: return f"{hr}hr {min}min"
+    else: return f"{min}min"
+    
+def vote_display(full_votes):
+    if full_votes > 1000000: return f"{full_votes // 1000000}M"
+    elif full_votes > 1000: return f"{full_votes // 1000}K"
+    else: return f"<1K"
+    
+    
 def highlight_lean_row(row):
     val = row['Lean']
     
@@ -64,17 +76,17 @@ def get_engine():
     )
 
 @st.cache_data(ttl=3600)
-def load_data():
+def load_data_snowflake():
     engine = get_engine()
     return pd.read_sql("SELECT * FROM P_MOVIE_DB.DBT_GOLD.JOINED_MOVIE_RATINGS", engine)
 
-df = load_data()
+df = load_data_snowflake()
 df.columns = df.columns.str.upper()
     
 
 st.set_page_config(page_title="PMDb", page_icon="🎞️", layout="centered")
 st.title("🎞️ PMDb")
-st.markdown("Database of 37,000+ films with **IMDb** and **Letterboxd** ratings and information. Explore how they agree, disgree, and more...")
+st.markdown("Database of 37,000+ films with **IMDb** and **Letterboxd** ratings and information. Explore how they combine, disgree, and more...")
 # st.divider()
 
 
@@ -123,9 +135,9 @@ with graph_tab:
     )
 
     fig.update_layout(
-        plot_bgcolor='#0e1117',
-        paper_bgcolor='#0e1117',
-        font_color='white',
+        # plot_bgcolor='#0e1117',
+        # paper_bgcolor='#0e1117',
+        font_color='#b8c5d2',
         coloraxis_colorbar_title='Platform Lean'
     )
 
@@ -187,9 +199,9 @@ with graph_tab:
     )
 
     fig2.update_layout(
-        plot_bgcolor='#0e1117',
-        paper_bgcolor='#0e1117',
-        font_color='white',
+        # plot_bgcolor='#0e1117',
+        # paper_bgcolor='#0e1117',
+        font_color='#b8c5d2',
         xaxis=dict(zeroline=True, zerolinecolor='white', zerolinewidth=1),
         legend=dict(orientation='h', yanchor='bottom', y=1.02)
     )
@@ -241,7 +253,7 @@ with rank_tab:
     display_df = pd.DataFrame({
         "#": rank_df.index,
         "Film": rank_df['TITLE'] + " (" + rank_df['RELEASE_YEAR'].astype(str) + ")",
-        "Combined": rank_df['COMPOSITE_RATING'].round(2),
+        "Combined": (rank_df['COMPOSITE_RATING'] * 10).round(1),
         "IMDb": rank_df['IMDB_RATING'],
         "Letterboxd": rank_df['LB_RATING'],
         "Lean": rank_df['RAW_RATING_DIFF'].round(2),
@@ -252,7 +264,7 @@ with rank_tab:
         display_df.style
         .apply(highlight_lean_row, axis=1)
         .format({
-            "Combined": "{:.2f}",
+            "Combined": "{:.1f}",
             "IMDb": "{:.1f}",
             "Letterboxd": "{:.1f}",
             "Lean": "{:.2f}",
@@ -273,10 +285,20 @@ with rank_tab:
     
 
 with film_tab:
+    st.write("")
+    
+    first_film = 'tt1375666'
+
+    top_row = df[df["TT_ID"] == first_film]
+    rest = df[df["TT_ID"] != first_film]
+
+    df = pd.concat([top_row, rest], ignore_index=True)
+    
+    film_list = list(df.itertuples())
     
     selected_film = st.selectbox(
         "Search a Film",
-        options=list(df.itertuples()), 
+        options=film_list,
         format_func=lambda f: f"{f.TITLE} ({f.RELEASE_YEAR})"
     )
 
@@ -285,11 +307,11 @@ with film_tab:
         col1, col2 = st.columns([1, 2])
 
         with col1:
-            st.image(selected_film.POSTER_LINK, width=220)
+            st.image(selected_film.POSTER_LINK, width=220, caption=f"[IMDb](https://www.imdb.com/title/{selected_film.TT_ID})  ·  [Letterboxd](https://letterboxd.com/film/{letterboxd_slug(selected_film.TITLE)}/)")
 
         with col2:
             st.subheader(f"{selected_film.TITLE}")
-            st.caption(f"{selected_film.RELEASE_YEAR} · {int(selected_film.RUNTIME_MIN)} min · {selected_film.NUM_VOTES:,} votes · [IMDb](https://www.imdb.com/title/{selected_film.TT_ID}) · [Letterboxd](https://letterboxd.com/film/{letterboxd_slug(selected_film.TITLE)}/)")
+            st.caption(f"{selected_film.RELEASE_YEAR}  ·  {min_to_hr(int(selected_film.RUNTIME_MIN))}  ·  {vote_display(selected_film.NUM_VOTES)} votes")
             
             composite_percentile = max(1, round((df['COMPOSITE_RATING'] < selected_film.COMPOSITE_RATING).mean() * 100))
             imdb_percentile = max(1, round((df['IMDB_RATING'] < selected_film.IMDB_RATING).mean() * 100))
@@ -298,15 +320,15 @@ with film_tab:
             st.write("")
             
             m1, m2, m3 = st.columns(3)
-            m1.metric("Combined", round(selected_film.COMPOSITE_RATING, 2),
+            m1.metric("**Combined** / 100", round(selected_film.COMPOSITE_RATING * 10, 2),
                 delta=percentile_label(composite_percentile),
                 delta_color=percentile_color(composite_percentile),
                 delta_arrow="off")
-            m2.metric("IMDb", selected_film.IMDB_RATING,
+            m2.metric("**IMDb** / 10", selected_film.IMDB_RATING,
                 delta=percentile_label(imdb_percentile),
                 delta_color=percentile_color(imdb_percentile),
                 delta_arrow="off")
-            m3.metric("Letterboxd", selected_film.LB_RATING,
+            m3.metric("**Letterboxd** / 5", selected_film.LB_RATING,
                 delta=percentile_label(lb_percentile),
                 delta_color=percentile_color(lb_percentile),
                 delta_arrow="off")
@@ -321,13 +343,13 @@ with film_tab:
                 st.info(f"Both platforms rate this film similarly")
             elif abs_diff < 0.3:
                 if diff > 0:
-                    st.success(f"Letterboxd slightly favors this film by **{abs_diff}** points")
+                    st.success(f"Letterboxd slightly favors this film by **{round(abs_diff*10)}** points")
                 else:
-                    st.warning(f"IMDb slightly favors this film by **{abs_diff}** points")
+                    st.warning(f"IMDb slightly favors this film by **{round(abs_diff * 10)}** points")
             elif diff > 0:
-                st.success(f"Letterboxd favors this film by **{abs_diff}** points")
+                st.success(f"Letterboxd favors this film by **{round(abs_diff * 10)}** points")
             else:
-                st.warning(f"IMDb favors this film by **{abs_diff}** points")
+                st.warning(f"IMDb favors this film by **{round(abs_diff * 10)}** points")
 
 
 st.divider()
