@@ -12,7 +12,9 @@ load_dotenv()
 def min_to_hr(minutes):
     hr = minutes // 60
     min = minutes % 60
-    if hr > 0: return f"{hr}hr {min}min"
+    if hr > 0: 
+        if min == 0: return f"{hr}hr"
+        else: return f"{hr}hr {min}min"
     else: return f"{min}min"
     
 def vote_display(full_votes):
@@ -90,7 +92,7 @@ st.markdown("Database of 37,000+ films with **IMDb** and **Letterboxd** ratings 
 # st.divider()
 
 
-graph_tab, rank_tab, film_tab = st.tabs(["Visualizations", "Rankings", "Film Details"])
+graph_tab, rank_tab, film_tab = st.tabs(["Visualizations", "Rankings", "Films"])
 
 with graph_tab:
     st.subheader("Scatterplot Comparison")
