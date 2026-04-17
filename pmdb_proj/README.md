@@ -9,9 +9,9 @@ Transforms raw movie data from Bronze → Silver → Gold using dbt Core and Sno
 Bronze (raw)                    Silver (clean)            Gold (analytics)
 ─────────────                   ──────────────────        ─────────────────
 LETTERBOXD_BASIC_IMPORT   ──┐
-LETTERBOXD_POSTERS_IMPORT ──┴──→  letterboxed_clean  ──┐
+LETTERBOXD_POSTERS_IMPORT ──┴──→  LETTERBOXD_CLEAN   ──┐
 IMDB_BASIC_IMPORT         ──┐                          │
-IMDB_RATING_IMPORT        ──┴──→  imdb_clean           ├──→  joined_movie_ratings
+IMDB_RATING_IMPORT        ──┴──→  IMDB_CLEAN           ├──→  JOINED_MOVIE_RATINGS
                                                     
 ```
 
@@ -26,9 +26,9 @@ IMDB_RATING_IMPORT        ──┴──→  imdb_clean           ├──→ 
 
 ### Gold
 
-| Model           | Description                                                                                  |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `movies_joined` | Joins both silver tables on title + year, adds composite rating and rating diff columns |
+| Model | Source | Description |
+| --- | --- | --- |
+| `movies_joined` |    `letterboxed_clean`+ `imdb_clean` |  Joins both silver tables on title + year, adds composite rating and rating diff columns |
 
 ## Usage
 
